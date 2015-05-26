@@ -66,6 +66,7 @@ private:
 	uint8_t pull();
 	void setZero(uint8_t v);
 	void setNeg(uint8_t v);
+	void branch(const bool condition, const uint16_t add);
 
 	Memory *memory;
 	Ppu *ppu;
