@@ -44,12 +44,12 @@ void Cpu::powerUp(){
 }
 
 void Cpu::reset(){
-	r.pc = memory->read(RST_MSB) * 256 + memory->read(RST_LSB);//0xA200;//0xC000;
+	r.pc = 0xC000;//memory->read(RST_MSB) * 256 + memory->read(RST_LSB);//0xA200;//0xC000;
 	r.sp = 0xFD;
 	r.a =  0x0;
 	r.x =  0x0;
 	r.y =  0x0;
-	r.p =  B5_F | BRK_F | DEC_F;// For nestest : B5_F | IRQ_F;//
+	r.p =  B5_F | IRQ_F;//B5_F | BRK_F | DEC_F;// For nestest :
 
 	ppu->reset();
 }
@@ -118,7 +118,7 @@ void Cpu::tick(){
 
 		// Print the current instruction in formated text
 		// don't use it for something else than a cpu test ROM
-		//this->printCurrentState(opcode);
+		this->printCurrentState(opcode);
 
 		// Increment PC, could be replace
 		r.pc += addModeLenInstruction[opcodeAddMode[opcode]];
@@ -334,17 +334,33 @@ uint8_t Cpu::pull(){
 }
 
 
+/*
+ * Check if number zero and change Z flag in consequence
+ */
 void Cpu::setZero(uint8_t v){
 	if(v == 0)
 		r.p |= ZERO_F;
 	else
 		r.p &= ~ZERO_F;
 }
+/*
+ * Check b7 of the number and change N flag in consequence
+ */
 void Cpu::setNeg(uint8_t v){
 	if(v & 0x80)// Check bit 7
 		r.p |= NEG_F;
 	else
 		r.p &= ~NEG_F;
+}
+
+/*
+ * If condition true set C flag to 1
+ */
+void Cpu::setCarry(bool condition){
+	if(condition)
+		r.p |= CARRY_F;
+	else
+		r.p &= ~CARRY_F;
 }
 
 void Cpu::branch(const bool condition, const uint16_t add){
@@ -523,8 +539,6 @@ void Cpu::PHP(args_t args){
 //	BRK					11				I is set to 1
 //	/IRQ				10				I is set to 1
 //	/NMI				10				I is set to 1
-	//push(r.p & ~(B5_F | BRK_F));
-	//push(r.p | B5_F | BRK_F);
 	push(r.p | BRK_F);
 	doCycle();
 }
@@ -558,10 +572,7 @@ void Cpu::ADC(args_t args){
 	else
 		r.p &= ~OVER_F;
 	r.a = v;
-	if(v & 0x100)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(v & 0x100);
 	setZero(r.a);
 	setNeg(r.a);
 }
@@ -575,10 +586,7 @@ void Cpu::SBC(args_t args){
 		r.p &= ~OVER_F;
 	r.a = v;
 
-	if(v & 0x100)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(v & 0x100);
 	setZero(r.a);
 	setNeg(r.a);
 }
@@ -635,20 +643,14 @@ void Cpu::ROL(args_t args){
 	if((args.opcode & 0x0F) == 0x0A){// Check if we are in Accumulator mode
 		uint8_t b7 = r.a & 0x80;
 		r.a = (r.a << 1) | (r.p & CARRY_F);
-		if(b7)
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(b7);
 		setZero(r.a);
 		setNeg(r.a);
 	}
 	else{
 		uint8_t b7 = args.value & 0x80;
 		args.value = (args.value << 1) | (r.p & CARRY_F);
-		if(b7)
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(b7);
 		setZero(args.value);
 		setNeg(args.value);
 		mW(args.add, args.value);
@@ -661,20 +663,14 @@ void Cpu::ROR(args_t args){
 	if((args.opcode & 0x0F) == 0x0A){// Check if we are in Accumulator mode
 		uint8_t b0 = r.a & 0x01;
 		r.a = (r.a >> 1) + (r.p & CARRY_F) * 128;
-		if(b0)
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(b0);
 		setZero(r.a);
 		setNeg(r.a);
 	}
 	else{
 		uint8_t b0 = args.value & 0x01;
 		args.value = (args.value >> 1) | ((r.p & CARRY_F) << 7);
-		if(b0)
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(b0);
 		setZero(args.value);
 		setNeg(args.value);
 		mW(args.add, args.value);
@@ -685,19 +681,13 @@ void Cpu::ROR(args_t args){
 
 void Cpu::LSR(args_t args){
 	if((args.opcode & 0x0F) == 0x0A){// Check if we are in Accumulator mode
-		if(r.a & 0x01) // C = B0
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(r.a & 0x01); // C = B0
 		r.a = r.a / 2;
 		setZero(r.a);
 		setNeg(r.a);
 	}
 	else{
-		if(args.value & 0x01) // C = B0
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(args.value & 0x01); // C = B0
 		args.value = args.value / 2;
 		setZero(args.value);
 		setNeg(args.value);
@@ -709,19 +699,13 @@ void Cpu::LSR(args_t args){
 
 void Cpu::ASL(args_t args){
 	if((args.opcode & 0x0F) == 0x0A){// Check if we are in Accumulator mode
-		if(r.a & 0x80) // C = B7
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(r.a & 0x80); // C = B7
 		r.a = r.a * 2;
 		setZero(r.a);
 		setNeg(r.a);
 	}
 	else{
-		if(args.value & 0x80) // C = B7
-			r.p |= CARRY_F;
-		else
-			r.p &= ~CARRY_F;
+		setCarry(args.value & 0x80); // C = B7
 		args.value = args.value * 2;
 		setZero(args.value);
 		setNeg(args.value);
@@ -752,28 +736,19 @@ void Cpu::RTI(args_t args){
 
 
 void Cpu::CMP(args_t args){
-	if(r.a >= args.value)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(r.a >= args.value);
 	setZero(r.a - args.value);
 	setNeg(r.a - args.value);
 }
 
 void Cpu::CPX(args_t args){
-	if(r.x >= args.value)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(r.x >= args.value);
 	setZero(r.x - args.value);
 	setNeg(r.x - args.value);
 }
 
 void Cpu::CPY(args_t args){
-	if(r.y >= args.value)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(r.y >= args.value);
 	setZero(r.y - args.value);
 	setNeg(r.y - args.value);
 }
@@ -858,10 +833,7 @@ void Cpu::RRA(args_t args){
 
 void Cpu::ANC(args_t args){
 	AND(args);
-	if((r.p  & NEG_F)  == NEG_F) // N => C
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry((r.p  & NEG_F)  == NEG_F); // N => C
 	//ASL(args);
 }
 void Cpu::ALR(args_t args){
@@ -873,10 +845,7 @@ void Cpu::ARR(args_t args){
 	AND(args);
 	args.add = 0x0A;
 	ROR(args);
-	if((r.a  & 0x40)  == 0x40) // B6 => C
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry((r.a  & 0x40)  == 0x40); // B6 => C
 	if((((r.a  & 0x40) >> 6)^((r.a  & 0x20) >> 5)) == 1) // B6^B7 => V
 		r.p |= OVER_F;
 	else
@@ -892,10 +861,7 @@ void Cpu::AXS(args_t args){
 	r.x = (r.a & r.x) - args.value;
 	setNeg(r.x);
 	setZero(r.x);
-	if(((r.a & r.x) - args.value) > 0xFF)
-		r.p |= CARRY_F;
-	else
-		r.p &= ~CARRY_F;
+	setCarry(((r.a & r.x) - args.value) > 0xFF);
 }
 //[1005] => addr = PB();
 //[1020] => d = Y;

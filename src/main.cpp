@@ -12,7 +12,7 @@ using namespace std;
 
 // TODO load from args
 int main(){
-	char filename[] = "SuperMarioBros.nes";//"sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"nestest.nes";//"donkeykong.nes";//"NEStress.NES";////
+	char filename[] = "nestest.nes";//"SuperMarioBros.nes";//"sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"donkeykong.nes";//"NEStress.NES";////
 	Cpu cpu;
 	if(cpu.loadCartridge(filename) < 0){
 		printf("Fail to load cartridge");
@@ -23,7 +23,7 @@ int main(){
 
 	bool flag = false;
 	int s = 10000;
-	for(int i = 0; i < s; i--){// For tests: 5 000 000 // 07-abs_xy.nes 5000000// 15-brk fail at 36100 // 16-special 36000
+	for(int i = 0; i < s; i++){// For tests: 5 000 000 // 07-abs_xy.nes 5000000// 15-brk fail at 36100 // 16-special 36000
 		/*uint8_t kk = m.read(0x6000);
 		if(kk == 0x81){
 			printf("RESET!\n");

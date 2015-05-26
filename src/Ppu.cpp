@@ -122,7 +122,7 @@ void Ppu::setMemory(Memory *m){
 }
 
 void Ppu::reset(){
-	SL = 0;
+	SL = 241;
 	cycle = 0;
 
 	ppu_reg.ctrl = 0;
