@@ -96,7 +96,6 @@ bool Cpu::checkForInt(){
 }
 
 void Cpu::tick(){
-	//newCycle = 0;
 
 	//Save number of cycle for debugging
 	oldCycleCount = this->ppu->getCycle();
@@ -117,26 +116,16 @@ void Cpu::tick(){
 
 		args_t args = getAddressBaseOnAddressingMode(opcode);
 
-		// Debug
-		static long long int wait4It = 0;
-		//wait4It ++;
+		// Print the current instruction in formated text
+		// don't use it for something else than a cpu test ROM
+		//this->printCurrentState(opcode);
 
-		// 4c 8057 = Super Mario bros waiting for NMI interupt
-		//if(!(opcode == 0x4c && inst[1] == 0x57 && inst[2] == 0x80))
-		if(wait4It >= 7488437)
-			this->printCurrentState(opcode);
-
+		// Increment PC, could be replace
 		r.pc += addModeLenInstruction[opcodeAddMode[opcode]];
-		(this->*opcodeFunc[opcode])(args);
 
-		//newCycle += opcodeCycle[opcode];
+		// Execute Opcode
+		(this->*opcodeFunc[opcode])(args);
 	}
-	/*
-	for(int i = 0; i < newCycle * 3; i++){
-		checkForInt();
-		ppu->tick();
-	}*/
-	//ppu->addCycle(newCycle * 3);
 }
 
 args_t Cpu::getAddressBaseOnAddressingMode(uint8_t opcode){
@@ -249,8 +238,6 @@ args_t Cpu::getAddressBaseOnAddressingMode(uint8_t opcode){
 	// we load the value
 	if(addMode > 1 && addMode < 10){
 		// In the case of the STA, JMP and JSR, we don't want to do a read that affect the memory
-		// I should fix the useless read by setting cycle on read/write instead of
-		// by an hardcoded table of cycle count.
 		if((opcode & 0xF0) != 0x80 &&
 		   opcode != 0x20 && opcode != 0x91 && opcode != 0x94 &&
 		   opcode != 0x95 && opcode != 0x96 && opcode != 0x99 &&
@@ -262,11 +249,15 @@ args_t Cpu::getAddressBaseOnAddressingMode(uint8_t opcode){
 	return args;
 }
 
-// Head of nestest.log
-//C000  4C F5 C5  JMP $C5F5                       A:00 X:00 Y:00 P:24 SP:FD CYC:  0 SL:241
-//C5F5  A2 00     LDX #$00                        A:00 X:00 Y:00 P:24 SP:FD CYC:  9 SL:241
-//C5F7  86 00     STX $00 = 00                    A:00 X:00 Y:00 P:26 SP:FD CYC: 15 SL:241
-//C5F9  86 10     STX $10 = 00                    A:00 X:00 Y:00 P:26 SP:FD CYC: 24 SL:241
+/*
+ * Print the current instruction in a format suitable for the nestest ROM
+ * For example:
+ * Head of nestest.log
+ * C000  4C F5 C5  JMP $C5F5                       A:00 X:00 Y:00 P:24 SP:FD CYC:  0 SL:241
+ * C5F5  A2 00     LDX #$00                        A:00 X:00 Y:00 P:24 SP:FD CYC:  9 SL:241
+ * C5F7  86 00     STX $00 = 00                    A:00 X:00 Y:00 P:26 SP:FD CYC: 15 SL:241
+ * C5F9  86 10     STX $10 = 00                    A:00 X:00 Y:00 P:26 SP:FD CYC: 24 SL:241
+ * */
 void Cpu::printCurrentState(uint8_t opcode){
 	char asmStr[100];
 	char eqStr[100];
@@ -356,6 +347,16 @@ void Cpu::setNeg(uint8_t v){
 		r.p &= ~NEG_F;
 }
 
+void Cpu::branch(const bool condition, const uint16_t add){
+	if(condition){
+		if(((r.pc + 2) & 0xFF00) != (add & 0xFF00))  // Cross boundary
+			doCycle(2);
+		else
+			doCycle(1);
+		r.pc = add;
+	}
+}
+
 /**
   Opcode impletmentation
 */
@@ -422,86 +423,43 @@ void Cpu::BIT(args_t args){
 }
 
 void Cpu::BCC(args_t args){
-	if((r.p & CARRY_F) == 0){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch((r.p & CARRY_F) == 0,
+		   args.add);
 }
 
 void Cpu::BCS(args_t args){
-	if(r.p & CARRY_F){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch(r.p & CARRY_F,
+		   args.add);
 }
 
 void Cpu::BEQ(args_t args){
-	if(args.add == 0xf300){
-		inst[0]++;
-	}
-	if(r.p & ZERO_F){
-		if((r.pc & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch(r.p & ZERO_F,
+		   args.add);
 }
 
 void Cpu::BMI(args_t args){
-	if(r.p & NEG_F){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch(r.p & NEG_F,
+		   args.add);
 }
 
 void Cpu::BNE(args_t args){
-	if((r.p & ZERO_F) == 0){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch((r.p & ZERO_F) == 0,
+		   args.add);
 }
 
 void Cpu::BPL(args_t args){
-	if((r.p & NEG_F) == 0){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch((r.p & NEG_F) == 0,
+		   args.add);
 }
 
 void Cpu::BVC(args_t args){
-	if((r.p & OVER_F) == 0){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch((r.p & OVER_F) == 0,
+		   args.add);
 }
 
 void Cpu::BVS(args_t args){
-	if(r.p & OVER_F){
-		if(((r.pc + 2) & 0xFF00) != (args.add & 0xFF00))  // Cross boundary
-			doCycle(2);
-		else
-			doCycle(1);
-		r.pc = args.add;
-	}
+	branch(r.p & OVER_F,
+		   args.add);
 }
 
 void Cpu::TXS(args_t args){
