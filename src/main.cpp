@@ -18,7 +18,7 @@ int main(int argc, char* argv[]){
 	char* filename;
 
 	if (argc < 2) {
-		printf("NESemu needs at least two arguments, %d was given\n", argc);
+		printf("NESemu needs at least one arguments, %d was given\n", argc);
 		return 0;
 	}
 
