@@ -9,6 +9,10 @@
 
 using namespace std;
 
+void printUsage(char* exec) {
+	printf("Usage : %s (play|help) <filename>\n", exec);
+}
+
 
 //list of rom : "SuperMarioBros.nes,sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"nestest.nes";//"donkeykong.nes";//"NEStress.NES";////
 
@@ -19,18 +23,19 @@ int main(int argc, char* argv[]){
 
 	if (argc < 2) {
 		printf("NESemu needs at least one arguments, %d was given\n", argc);
+		printUsage(argv[0]);
 		return 0;
 	}
 
 	if (!strcmp(argv[1], "play") and argc > 2)
 		filename = argv[2];
 	else if (!strcmp(argv[1], "help")) {
-		printf("Usage : %s (play|help) <filename>\n", argv[0]);
+		printUsage(argv[0]);
 		return 0;
 	}
 	else {
 		printf("Wrong argument : %s\n", argv[1]);
-		printf("Usage : %s (play|help) <filename>\n", argv[0]);
+		printUsage(argv[0]);
 		return 0;
 	}
 
