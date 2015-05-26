@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,15 +9,46 @@
 
 using namespace std;
 
+void printUsage(char* exec) {
+	printf("Usage : %s (play|help) <filename>\n", exec);
+}
 
 
+//list of rom : "SuperMarioBros.nes,sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"nestest.nes";//"donkeykong.nes";//"NEStress.NES";////
 
 // TODO load from args
+<<<<<<< HEAD
 int main(){
 	char filename[] = "nestest.nes";//"SuperMarioBros.nes";//"sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"donkeykong.nes";//"NEStress.NES";////
+=======
+int main(int argc, char* argv[]){
+
+	char* filename;
+
+	if (argc < 2) {
+		printf("NESemu needs at least one arguments, %d was given\n", argc);
+		printUsage(argv[0]);
+		return 0;
+	}
+
+	if (!strcmp(argv[1], "play") and argc > 2)
+		filename = argv[2];
+	else if (!strcmp(argv[1], "help")) {
+		printUsage(argv[0]);
+		return 0;
+	}
+	else {
+		printf("Wrong argument : %s\n", argv[1]);
+		printUsage(argv[0]);
+		return 0;
+	}
+
+	printf("Starting %s ...\n", filename);
+
+>>>>>>> 0b984d4603550bd2c6d4f91a1a122aed726e3cfb
 	Cpu cpu;
 	if(cpu.loadCartridge(filename) < 0){
-		printf("Fail to load cartridge");
+		printf("Fail to load cartridge\n");
 		return 1;
 	}
 
@@ -52,4 +85,3 @@ int main(){
 	}while(i <= 0x6100);*/
 	return 0;
 }
-
