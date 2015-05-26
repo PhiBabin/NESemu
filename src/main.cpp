@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,14 +10,35 @@
 using namespace std;
 
 
-
+//list of rom : "SuperMarioBros.nes,sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"nestest.nes";//"donkeykong.nes";//"NEStress.NES";////
 
 // TODO load from args
-int main(){
-	char filename[] = "SuperMarioBros.nes";//"sprite_overflow_tests/2.Details.nes";//"palette_ram.nes";//"nestest.nes";//"donkeykong.nes";//"NEStress.NES";////
+int main(int argc, char* argv[]){
+
+	char* filename;
+
+	if (argc < 2) {
+		printf("NESemu needs at least two arguments, %d was given\n", argc);
+		return 0;
+	}
+
+	if (!strcmp(argv[1], "play") and argc > 2)
+		filename = argv[2];
+	else if (!strcmp(argv[1], "help")) {
+		printf("Usage : %s (play|help) <filename>\n", argv[0]);
+		return 0;
+	}
+	else {
+		printf("Wrong argument : %s\n", argv[1]);
+		printf("Usage : %s (play|help) <filename>\n", argv[0]);
+		return 0;
+	}
+
+	printf("Starting %s ...\n", filename);
+
 	Cpu cpu;
 	if(cpu.loadCartridge(filename) < 0){
-		printf("Fail to load cartridge");
+		printf("Fail to load cartridge\n");
 		return 1;
 	}
 
@@ -52,4 +75,3 @@ int main(){
 	}while(i <= 0x6100);*/
 	return 0;
 }
-

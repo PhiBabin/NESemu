@@ -42,3 +42,4 @@
 
 #Other things
 roms/*.nes
+src/NESemu
