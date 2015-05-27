@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <SDL/SDL.h>
 
 #include "include/Mapper.h"
 #include "include/mappers/NRom128.h"
@@ -46,7 +47,7 @@ typedef enum {
 }nametab_mirroring_t;
 
 // The $4016/$4017 register return back in that order the button state
-enum controller_input_t{
+typedef enum {
 	BTN_A = 0,
 	BTN_B,
 	BTN_SELECT,
@@ -55,7 +56,7 @@ enum controller_input_t{
 	BTN_DOWN,
 	BTN_LEFT,
 	BTN_RIGHT
-};
+}controller_input_t;
 
 class Ppu;
 
@@ -73,6 +74,11 @@ public:
 	void writeCHR(uint16_t a, uint8_t v);
 
 	nametab_mirroring_t getNameTableMirroring();
+
+	void fetchKeyboardEvent();
+	void setPlayerInput(const SDL_Event event);
+	uint8_t readControllerInput();
+	void writeControllerInput(uint8_t v);
 private:
 	void printNesFileInfo(iNesFile_t &nesFile);
 
@@ -84,9 +90,20 @@ private:
 
 	uint8_t apu_reg[24];
 
+	uint8_t keyState[SDLK_LAST];
+	const uint16_t controller_player1[8] = {
+										SDLK_x,		// Button A
+										SDLK_z,		// Button B
+										SDLK_RSHIFT,// Button SELECT
+										SDLK_RETURN,// Button START
+										SDLK_UP,	// Button UP
+										SDLK_DOWN,	// Button DOWN
+										SDLK_LEFT,	// Button LEFT
+										SDLK_RIGHT	// Button RIGHT
+										};
 
-	bool controller_player1[8];
-
+	uint8_t ctrlBitShift;
+	bool lastStrobeEqual1, bitShiftPlayer1Enable;
 
 	// Meta Data
 	Mapper *mapper;

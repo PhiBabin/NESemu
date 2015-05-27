@@ -149,79 +149,6 @@ bool Ppu::intNMI(){
 }
 
 
-uint16_t old(){
-//	uint16_t tp, tx, ty, ax, ay, ti, atfxf, msb, lsb, attributeAddress, tileAddress;
-
-//	uint16_t xPartOfT = ppu_reg.t & 0x1F;
-//	uint16_t realX = (xPartOfT << 3) | ppu_reg.x;
-//	uint16_t nametabPartOfT = (ppu_reg.t & 0xC000) >> 11;
-//	//if(realX != ppu_reg.scrollx || nametabPartOfT  != (ppu_reg.ctrl & CTRL_NAMETABLE_F)){
-//	//	flagDMA = true;
-//	//}
-//	// tile index
-//	tp = (cycle + ppu_reg.scrollx) / 256;
-//	tx = ((cycle + ppu_reg.scrollx) % 256) / 8;
-//	ty = SL / 8;
-
-//	// tile id: nametable[tx + ty * 32]
-//	uint16_t nametable = 0x2000
-//			+ (uint16_t)(nametabPartOfT) * 0x400
-//			+ tp * 0x400;
-
-//	uint16_t patterntable = 0x1000 * ((ppu_reg.ctrl & CTRL_PAT_TAB_BACKG_F) >> 4);
-
-//	tileAddress = 0x2000 | (ppu_reg.v & 0x0FFF);
-//	ti = readPPU(tileAddress);
-//	//ti = readPPU(nametable + tx + ty * 32);
-
-//	ax = (cycle + ppu_reg.scrollx) % 8;
-//	//ay = SL % 8;
-//	ay = (ppu_reg.v & 0x7000) >> 12;
-//	uint8_t ax_n = ppu_reg.x;
-
-//	if(ax != ppu_reg.x){
-//		flagDMA = true;
-//	}
-//	// Retrieve the color lsb
-//	// max 255 +
-//	// TODO put in function
-//	//lsb = ((readPPU(patterntable + ti * 16 + ay	   ) >> (7 - ax)) & 0x1) +
-//	//	  ((readPPU(patterntable + ti * 16 + ay	+ 8) >> (7 - ax)) & 0x1) * 2;
-
-//	lsb = ((readPPU(patterntable + ti * 16 + ay	   ) >> (7 - ppu_reg.x)) & 0x1) +
-//		  ((readPPU(patterntable + ti * 16 + ay	+ 8) >> (7 - ppu_reg.x)) & 0x1) * 2;
-
-
-//	// Attribut table 4x4 bytes : attributetable[tx/4 + (ty/4) * 8 ]
-//	// NN 1111 YYY XXX
-//	// || |||| ||| +++-- high 3 bits of coarse X (x/4)
-//	// || |||| +++------ high 3 bits of coarse Y (y/4)
-//	// || ++++---------- attribute offset (960 bytes)
-//	// ++--------------- nametable select
-//	//atfxf = readPPU(nametable + 960 + tx / 4 + (ty >> 2) * 8 );
-//	attributeAddress = 0x23C0
-//						| (ppu_reg.v & 0x0C00)
-//						| ((ppu_reg.v >> 4) & 0x38)
-//						| ((ppu_reg.v >> 2) & 0x07);
-//	atfxf = readPPU(attributeAddress);
-//	// Get the msb from the 4x4 bytes:
-//	//   AABB
-//	//   CCDD
-//	// b : DDCCBBAA  tx =4 ty =5
-//	// b : DDCCBBAA >> (2 * (4 and 1)) + 4 * (5 and 1))
-//	// b : DDCCBBAA >> 2 * 0 + 4 * 1 = 6
-//	// b : 000000DD and 3
-//	// b : 000000DD
-//	//msb = (atfxf >> ( 2 * ((tx/2) & 1) + 4 * ((ty/2) & 1))) & 3;
-//	uint16_t ac = 0x3F00 + (msb << 2) + lsb;
-//	//uint8_t color = readPPU(ac);
-
-//	incrementX();
-
-//	return ac;
-}
-
-
 
 void Ppu::incrementX(){
 	if((cycle + ppu_reg.x) % 8 == 7){
@@ -425,8 +352,8 @@ uint16_t Ppu::getSpriteColor(bool bgTransparent){
 			if(attr & OAM_SPRITE_FLIP_VER_F){
 				offy = 7 - offy;
 			}
-			lsb = ((readPPU(pAdd + ti * 16 + offy	   ) >> (7 - offx)) & 0x1) +
-				  ((readPPU(pAdd + ti * 16 + offy	+ 8) >> (7 - offx)) & 0x1) * 2;
+			lsb = ((readPPU(pAdd + ti * 16 + offy    ) >> (7 - offx)) & 0x1) +
+				  ((readPPU(pAdd + ti * 16 + offy + 8) >> (7 - offx)) & 0x1) * 2;
 
 			// If it's not a zero color
 			if(lsb != 0){
@@ -442,32 +369,10 @@ uint16_t Ppu::getSpriteColor(bool bgTransparent){
 					ppu_reg.status |= STAT_SPRITE0_OCCU_F;
 				}
 			}
-		}// If we reach the end of the oam fills with 0xFF
-		/*else if( y >= 0xEF){
-			break;
-		}*/
+		}
 	}
 	return color;
 
-}
-
-void Ppu::fetchPlayerInput(){
-	SDL_Event event;
-
-	while( SDL_PollEvent( &event ) ){
-		/* We are only worried about SDL_KEYDOWN and SDL_KEYUP events */
-		switch( event.type ){
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				printf( "Key release detected\n" );
-				break;
-			case SDL_QUIT:
-				exit(0);
-				break;
-			default:
-				break;
-		}
-	}
 }
 
 
@@ -499,7 +404,7 @@ void Ppu::tick(){
 		drawTilset();
 		SDL_Flip( screen );
 
-		fetchPlayerInput();
+		memory->fetchKeyboardEvent();
 	}//  The 257 dot is when horizontal(v) <= horizontal(t)
 	else if(SL < VISIBLE_SL && cycle == 257){
 		// TODO use defined mask everywhere

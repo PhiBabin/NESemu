@@ -44,12 +44,12 @@ void Cpu::powerUp(){
 }
 
 void Cpu::reset(){
-	r.pc = 0xC000;//memory->read(RST_MSB) * 256 + memory->read(RST_LSB);//0xA200;//0xC000;
+	r.pc = memory->read(RST_MSB) * 256 + memory->read(RST_LSB);//0xA200;//0xC000;
 	r.sp = 0xFD;
 	r.a =  0x0;
 	r.x =  0x0;
 	r.y =  0x0;
-	r.p =  B5_F | IRQ_F;//B5_F | BRK_F | DEC_F;// For nestest :
+	r.p =  B5_F | BRK_F | DEC_F;// For nestest :B5_F | IRQ_F;//
 
 	ppu->reset();
 }
@@ -59,7 +59,7 @@ int Cpu::loadCartridge(char * filename){
 }
 
 void Cpu::doCycle(uint n){
-	for (int i = 0; i < n * 3; ++i) {
+	for (uint i = 0; i < n * 3; ++i) {
 		this->ppu->tick();
 	}
 }
@@ -118,7 +118,7 @@ void Cpu::tick(){
 
 		// Print the current instruction in formated text
 		// don't use it for something else than a cpu test ROM
-		this->printCurrentState(opcode);
+		//this->printCurrentState(opcode);
 
 		// Increment PC, could be replace
 		r.pc += addModeLenInstruction[opcodeAddMode[opcode]];
@@ -264,7 +264,7 @@ void Cpu::printCurrentState(uint8_t opcode){
 	uint8_t addMode = opcodeAddMode[opcode];
 	inst[1] = this->memory->read(r.pc + 1);
 	inst[2] = this->memory->read(r.pc + 2);
-	uint16_t msb, lsb, a;
+	uint16_t a;
 	switch(addMode){
 		case 0:
 			sprintf(asmStr, addModePrintStr[addMode], opcode, opcodeStr[opcode], ((opcode & 0x9F) == 0x0A ? "A" : " "));

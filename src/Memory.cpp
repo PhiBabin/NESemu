@@ -1,7 +1,13 @@
 #include "include/Memory.h"
 #include "include/Ppu.h"
 
-Memory::Memory():mapper(0){
+Memory::Memory():
+	mapper(0),
+	lastStrobeEqual1(false),
+	ctrlBitShift(0),
+	bitShiftPlayer1Enable(false){
+
+	memset(&keyState, 0, sizeof(keyState));
 
 }
 
@@ -128,10 +134,8 @@ uint8_t Memory::read(uint16_t a){
 		return ppu->readReg(a);
 	}// 0x4000 - 0x4016 : Register of APU and controller
 	else if(a < 0x4017){
-		if(a == 0x4016){
-			return 0xFF; // add real input
-		}
-		return apu_reg[a - 0x4000];
+		if(a == 0x4016 || a == 0x4017)
+			readControllerInput();
 	}// 0x4017 - 0x4FFF : Unused
 	else if(a < 0x5000){
 		return 0;
@@ -160,8 +164,9 @@ void Memory::write(uint16_t a, uint8_t v){
 		if(a == 0x4014){
 			ppu->writeReg(a, v);
 		}
-		else
-			apu_reg[a - 0x4000] = v;
+		else if(a == 0x4016)
+			writeControllerInput(v);
+//			apu_reg[a - 0x4000] = v;
 	}// 0x4017 - 0x4FFF : Unused
 	else if(a < 0x5000){
 		return;
@@ -189,6 +194,54 @@ void Memory::writeCHR(uint16_t a, uint8_t v){
 
 nametab_mirroring_t Memory::getNameTableMirroring(){
 	return nametabMirroring;
+}
+
+void Memory::fetchKeyboardEvent(){
+	SDL_Event event;
+
+
+	while(SDL_PollEvent(&event)){
+		switch (event.type){
+		case SDL_KEYDOWN:
+			keyState[event.key.keysym.sym] = 1;
+			break;
+		case SDL_KEYUP:
+			keyState[event.key.keysym.sym] = 0;
+			break;
+		case SDL_QUIT:
+			exit(0);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+uint8_t Memory::readControllerInput(){
+	// The 3 MSB are not driven so usually this is the most significant
+	// byte of the address of the controller port—0x40
+	if(keyState[SDLK_RIGHT] != 0 && ctrlBitShift == 7){
+		readCHR(0);
+	}
+	if(ctrlBitShift < 8){
+		uint8_t v = 0x40 | keyState[controller_player1[ctrlBitShift]];
+		if(bitShiftPlayer1Enable)
+			ctrlBitShift++;
+		return v;
+	}// Bitshifter return 1 after the 8 first read
+	else{
+		bitShiftPlayer1Enable = false;
+		return 0x40 | 1;
+	}
+}
+
+void Memory::writeControllerInput(uint8_t v){
+	bool currentStrobeEqual1 = v & 1;
+	if(lastStrobeEqual1 && !currentStrobeEqual1){
+		ctrlBitShift = 0;
+		bitShiftPlayer1Enable = true;
+	}
+	lastStrobeEqual1 = currentStrobeEqual1;
 }
 
 

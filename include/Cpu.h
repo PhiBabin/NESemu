@@ -178,7 +178,7 @@ private:
 
 	uint8_t addModeLenInstruction[12] = { 1, 2, 2, 2, 2, 2, 2 ,3, 3, 3, 3, 2};
 
-	char* addModePrintStr[12] = {
+	const char* addModePrintStr[12] = {
 		"%.2X       %s %s                         ",			//	0:	Address imply
 		"%.2X %.2X    %s #$%.2X                      ",			//	1:	Address Immediate			| #$??    | aa			 imm
 		"%.2X %.2X    %s $%.2X = %.2X                  ",		//	2:	Address Zero page			| $??     | m[aa]		 zp
@@ -213,6 +213,7 @@ private:
 /* FX*/11,  6,  0,  6,  3,  3,  3,  3,  0,  9,  0,  9,  8,  8,  8,  8
 	};
 
+	// Not used anymore
 	uint8_t opcodeCycle[256] =
 	{// X0 X1  X2  X3  X4  X5  X6  X7  X8  X9  XA  XB  XC  XD  XE  XF
 /* 0X*/ 2,  6,  0,  8,  3,  3,  5,  5,  3,  2,  2,  2,  4,  4,  6,  6,
@@ -233,7 +234,7 @@ private:
 /* FX*/ 2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7
 	};
 
-	char* opcodeStr[256] =
+	const char* opcodeStr[256] =
 	{//		 X0      X1      X2      X3      X4      X5      X6      X7      X8      X9      Xa      Xb      Xc      Xd      Xe      Xf
 	/* 0X*/ " BRK", " ORA", "*KIL", "*SLO", "*NOP", " ORA", " ASL", "*SLO", " PHP", " ORA", " ASL", "*ANC", "*NOP", " ORA", " ASL", "*SLO",
 	/* 1X*/ " BPL", " ORA", "*KIL", "*SLO", "*NOP", " ORA", " ASL", "*SLO", " CLC", " ORA", "*NOP", "*SLO", "*NOP", " ORA", " ASL", "*SLO",
