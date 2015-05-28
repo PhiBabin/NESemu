@@ -1,6 +1,8 @@
 #ifndef PPU_H
 #define PPU_H
 #include <SDL/SDL.h>
+#include <time.h>
+#include <ctime>
 #include "include/Memory.h"
 
 #define CYC_VISIBLE 256
@@ -53,8 +55,6 @@ typedef struct{
 	uint8_t mask;
 	uint8_t status;
 	uint8_t oma_add; // For $2003/$2004 and DMA offset
-	uint8_t scrollx;
-	uint8_t scrolly;
 	uint16_t ppu_add;// For $2006/$2007
 
 	// PPU scrolling strange behavior
@@ -64,6 +64,13 @@ typedef struct{
 
 	uint16_t oma_dma;
 }reg_ppu_t;
+
+typedef struct{
+	uint8_t y;
+	uint8_t tile_id;
+	uint8_t attribut;
+	uint8_t x;
+}reg_oma_t;
 
 
 class Ppu
@@ -82,7 +89,7 @@ public:
 
 	int getCycle();
 	int getScreenline();
-	void addCycle(int c);
+	void addCycle(const int c);
 
 	uint8_t readPPU(uint16_t a);
 	void writePPU(uint16_t a, uint8_t v);
@@ -93,6 +100,8 @@ public:
 
 	uint8_t readOAM(uint8_t a, uint8_t offset);
 	void writeOAM2(uint8_t a, uint8_t offset, uint8_t v);
+
+	uint8_t readPallette(uint8_t a);
 
 	bool wasCallDMA();
 	int doDMA();
@@ -105,7 +114,7 @@ public:
 	void fetchPlayerInput();
 private:
 	Memory *memory;
-	unsigned long long int cycleSinceReset;
+	unsigned int cycleSinceReset;
 	int cycle;
 	int SL;
 
@@ -121,17 +130,20 @@ private:
 	uint16_t add_cpu_ppu;
 	uint8_t readBuffCPUPPU;
 
-	uint16_t frame;
 
 	uint8_t sprite_eval_buff;
+	uint nbrSpriteCurrentSL;
 
 	bool ppu_reg_enable_after_rst;
-	bool dummy_read;
 
-	bool flagDMA; // unused TODO
 	int bytesLeft;
 
 	bool nmi_enable;
+
+	// Debuging
+	clock_t end, begin;
+	uint16_t frame;
+	bool flagDMA; // unused TODO
 
 	// SDL stuff to put in own class
 	SDL_Surface *surface;

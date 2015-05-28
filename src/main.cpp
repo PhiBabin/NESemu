@@ -48,7 +48,7 @@ int main(int argc, char* argv[]){
 
 	cpu.powerUp();
 
-	//for(int i = 0; i < 10000; i++){// For tests: 5 000 000 // 07-abs_xy.nes 5000000// 15-brk fail at 36100 // 16-special 36000
+	//for(long int i = 0; i < 1000*1000; i++){// For tests: 5 000 000 // 07-abs_xy.nes 5000000// 15-brk fail at 36100 // 16-special 36000
 	while(1){
 		cpu.tick();
 	}

@@ -9,8 +9,13 @@ Cpu::Cpu(){
 	ppu->setMemory(memory);
 	memory->setPPU(ppu);
 
-	//this->powerUpState();
-	//this->reset();
+
+	r.pc = 0;
+	r.sp = 0;
+	r.a =  0;
+	r.x =  0;
+	r.y =  0;
+	r.p =  0;
 
 	//debug
 	value[0] = 0;
