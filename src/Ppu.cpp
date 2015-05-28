@@ -39,8 +39,9 @@ Ppu::Ppu():
 
 	bzero(ppu_pallette, 32);
 
+	SDL_Init(SDL_INIT_VIDEO);
 	// SDL stuff todo put in class
-	screen = SDL_SetVideoMode( CYC_VISIBLE, SL_PER_SCREEN, 32, SDL_SWSURFACE );
+	screen = SDL_SetVideoMode( CYC_VISIBLE, SL_PER_SCREEN, 32,  SDL_DOUBLEBUF | SDL_SWSURFACE );
 	/*SDL_PixelFormat& fmt = *(screen->format);
 	surface = SDL_CreateRGBSurface( 0, CYC_PER_SL, SL_PER_SCREEN,
 									fmt.BitsPerPixel,
@@ -417,6 +418,9 @@ void Ppu::tick(){
 		SDL_Flip( screen );
 		memory->fetchKeyboardEvent();
 
+		//double waitTime = MICRO_SECOND_PER_FRAME - (double( clock() - lastFrame) / CLOCKS_PER_SEC) / 1000000;
+		//usleep(waitTime);
+		//printf("%fus waitime\r\n", waitTime);
 		frame++;
 		if(frame == 20){
 			frame = 0;
@@ -426,6 +430,7 @@ void Ppu::tick(){
 			begin = clock();
 		}
 
+		lastFrame = clock();
 
 	}
 

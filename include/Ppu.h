@@ -1,14 +1,16 @@
 #ifndef PPU_H
 #define PPU_H
 #include <SDL/SDL.h>
-#include <time.h>
 #include <ctime>
+#include <unistd.h>
 #include "include/Memory.h"
 
 #define CYC_VISIBLE 256
 #define CYC_PER_SL  341
 #define VISIBLE_SL 240
 #define SL_PER_SCREEN 261
+
+#define MICRO_SECOND_PER_FRAME 16639
 
 #define DMA_BYTES_LEN 256
 
@@ -142,6 +144,7 @@ private:
 
 	// Debuging
 	clock_t end, begin;
+	clock_t lastFrame;
 	uint16_t frame;
 	bool flagDMA; // unused TODO
 

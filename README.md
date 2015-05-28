@@ -1,9 +1,9 @@
 # NES emulator
-Small NES emulator in C++, made just for fun
+Small NES emulator in C++ made as a programming exercise
 
 ## How to run
 ```
 make
-./6502emu
+./src/NESemu
 ```
 
